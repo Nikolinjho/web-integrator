@@ -101,6 +101,25 @@ export default {
       );
   },
   methods: {
+    async getData() {
+      try {
+        const res = await fetch(
+          `https://raw.githubusercontent.com/WilliamRu/TestAPI/master/db.json`,
+        );
+        const jsonRes = await res.json();
+        if (res.ok) {
+          const customFlatRes = this.customFlat(jsonRes.testArr);
+          this.data = this.customSplitArray(customFlatRes);
+        } else {
+          this.errorHandler({ status: res.status, statusText: res.statusText });
+        }
+      } catch (error) {
+        this.errorHandler(error)
+      }
+    },
+    errorHandler(error) {
+      alert(`Sry, error: ${error.status || 'unknown'} ${error.statusText || 'unknown'}`)
+    },
     customFlat(arr, res = []) {
       for (let i = 0; i < arr.length; i++) {
         const element = arr[i];
@@ -112,52 +131,27 @@ export default {
       }
       return res;
     },
-    customSplitArray(arr) {
-      let strings = [];
-      let objs = [];
-      let numbers = [];
-      let bools = [];
-      let others = [];
-
-      let id = 0;
+    customSplitArray(arr){
+      let res = {}
       for (let i = 0; i < arr.length; i++) {
-        const element = arr[i];
-
-        switch (true) {
-          case typeof element === 'string':
-            strings.push({ id: id++, value: element });
-
-            break;
-          case typeof element === 'number':
-            numbers.push({ id: id++, value: element });
-
-            break;
-          case typeof element === 'boolean':
-            bools.push({ id: id++, value: element });
-
-            break;
-          case typeof element === 'object' && element != null:
-            if (Object.keys(element).length > 0)
-              objs.push({ id: id++, value: element.value });
-
-            break;
-          default:
-            others.push(element);
-            break;
+        const type = typeof arr[i]
+        if (type === 'object' && (!arr[i] || !Object.keys(arr[i]).length)){
+          continue
         }
+        if (!res[type]){
+          res[type] = []
+        }
+        res[type].push(arr[i])
+        
       }
-      let res = [
-        { key: 'string', value: strings },
-        { key: 'object', value: objs },
-        { key: 'number', value: numbers },
-        { key: 'boolean', value: bools },
-      ];
-      return res;
+
+      return res
     },
     resetSelect() {
       for (const key in this.selectData) {
-        this.selectData[key] = '';
+        this.selectData[key] = [];
       }
+      this.$store.dispatch('resetState');
     },
     openDropdown(index) {
       if (this.showDropdown && this.currentDropdown === index) {
@@ -168,7 +162,6 @@ export default {
       this.showDropdown = true;
     },
     chooseOption(option, key, index) {
-      console.log(this.selectData);
       this.$store.dispatch('updateDataState', {
         boolean: [...this.selectData.boolean],
         number: [...this.selectData.number],
@@ -184,9 +177,9 @@ export default {
       this.selectData[key].splice(index, 0, option);
     },
     backward() {
+      console.log(this.savedDataLength);
       if (this.savedDataLength) {
         const prevData = this.$store.getters.getPreviousState;
-        console.log(prevData);
         this.selectData = prevData;
         this.$store.dispatch('popPrevDataState');
       }
@@ -197,9 +190,8 @@ export default {
       return this.$store.getters.getSelectDataLength;
     },
     isChecked() {
-      return (option, key) => {
-        return this.selectData[key].includes(option);
-      };
+      return (option, key) => this.selectData[key].includes(option);
+
     },
   },
 };

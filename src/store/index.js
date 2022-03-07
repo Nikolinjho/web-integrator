@@ -9,7 +9,7 @@ export default new Vuex.Store({
   },
   getters: {
     getPreviousState: s => {
-      if (s.selectDataArray && s.selectDataArray.length > 0) {
+      if (s.selectDataArray && s.selectDataArray.length) {
         return s.selectDataArray[s.selectDataArray.length - 1];
       }
     },
@@ -27,14 +27,20 @@ export default new Vuex.Store({
         state.selectDataArray = data
       }
     },
+    resetDataState(state){
+      state.selectDataArray = []
+    }
   },
   actions: {
+    resetState(context) {
+      context.commit('resetDataState')
+    },
     updateDataState(context, dataState) {
       context.commit('setDataState', dataState);
     },
     popPrevDataState(context) {
       // console.log(context.state.selectDataArray)
-      if (context.state.selectDataArray.length !== 0){
+      if (context.state.selectDataArray.length){
         let stateData = context.state.selectDataArray
         stateData.pop()
         console.log(stateData)
